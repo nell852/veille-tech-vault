@@ -40,6 +40,6 @@ jobs:
         if: steps.extract.outputs.card_id != '' && github.ref == 'refs/heads/main'
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           channel-id: 'C0A1JAS4KRP'
           slack-message: "🚀 La carte Trello <https://trello.com/c/${{ steps.extract.outputs.card_id }}|EN REVUE> vient d'arriver sur EN REVUE !"
