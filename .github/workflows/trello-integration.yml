@@ -1,0 +1,37 @@
+name: Trello Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    types: [opened, closed]
+
+jobs:
+  update-trello:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Extract Trello Card ID from commit message
+        id: extract
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          CARD_ID=$(echo "$COMMIT_MSG" | grep -oP '\[TRELLO-\K[^\]]+')
+          echo "card_id=$CARD_ID" >> $GITHUB_OUTPUT
+      
+      - name: Add comment to Trello card
+        if: steps.extract.outputs.card_id != ''
+        run: |
+          curl -X POST \
+            "https://api.trello.com/1/cards/${{ steps.extract.outputs.card_id }}/actions/comments" \
+            -d "key=${{ secrets.TRELLO_API_KEY }}" \
+            -d "token=${{ secrets.TRELLO_TOKEN }}" \
+            -d "text=✅ Commit pushed by ${{ github.actor }}%0A📝 ${{ github.event.head_commit.message }}%0A🔗 ${{ github.event.head_commit.url }}"
+      
+      - name: Move card to EN REVUE on main branch
+        if: github.ref == 'refs/heads/main' && steps.extract.outputs.card_id != ''
+        run: |
+          curl -X PUT \
+            "https://api.trello.com/1/cards/${{ steps.extract.outputs.card_id }}" \
+            -d "key=${{ secrets.TRELLO_API_KEY }}" \
+            -d "token=${{ secrets.TRELLO_TOKEN }}" \
+            -d "idList=${{ secrets.TRELLO_LIST_EN_REVUE }}"
